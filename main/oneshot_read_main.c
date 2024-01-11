@@ -52,7 +52,7 @@ static void init(void){
 void app_main(void)
 {
     init();
-    //-------------ADC1 Init---------------//
+    //-------------ADC1 Init---------------// Analog Digital Converter
     adc_oneshot_unit_handle_t adc1_handle;
     adc_oneshot_unit_init_cfg_t init_config1 = {
         .unit_id = ADC_UNIT_1,//PIN 0 on the on ESP32
@@ -72,7 +72,7 @@ void app_main(void)
     while (1) {
         //-------------ADC1 Read---------------//
         ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw));
-        ESP_LOGI(TAG, "ADC2 CH1 Raw: %d", adc_raw);
+        ESP_LOGI(*TAG, "ADC2 CH1 Raw: %d", adc_raw);
         switch (s_led_state){
         case 0b001:
             setPin(LED_RED,0);
