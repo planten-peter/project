@@ -73,7 +73,24 @@ void app_main(void)
         //-------------ADC1 Read---------------//
         ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw));
         ESP_LOGI(TAG, "ADC2 CH1 Raw: %d", adc_raw);
-        switch (s_led_state){
+            if(adc_raw < 2000 ){
+                  setPin(LED_RED,1);
+            setPin(LED_GREEN,0);
+            setPin(LED_BLUE,1);
+            ESP_LOGI("Color","GREEN");
+            s_led_state= s_led_state << 1;
+          
+            }
+            else{
+                 setPin(LED_RED,0);
+            setPin(LED_GREEN,1);
+            setPin(LED_BLUE,1);
+            ESP_LOGI("Color","RED");
+            s_led_state= s_led_state << 1;
+
+            }
+
+      /*  switch (s_led_state){
         case 0b001:
             setPin(LED_RED,0);
             setPin(LED_GREEN,1);
@@ -101,7 +118,7 @@ void app_main(void)
             setPin(LED_GREEN,1);
             setPin(LED_BLUE,1);
             ESP_LOGI("Color","OFF");
-        }
+        }*/
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
