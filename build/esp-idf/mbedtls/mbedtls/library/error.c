@@ -1,1 +1,0 @@
-/Users/sbk-laptop/esp/esp-idf/components/mbedtls/mbedtls/library/error.c

@@ -52,7 +52,7 @@ static void init(void){
 void app_main(void)
 {
     init();
-    //-------------ADC1 Init---------------//
+    //-------------ADC1 Init---------------// Analog Digital Converter
     adc_oneshot_unit_handle_t adc1_handle;
     adc_oneshot_unit_init_cfg_t init_config1 = {
         .unit_id = ADC_UNIT_1,//PIN 0 on the on ESP32
