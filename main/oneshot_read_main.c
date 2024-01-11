@@ -27,8 +27,8 @@ const static char *TAG = "EXAMPLE";
 #define EXAMPLE_ADC_ATTEN           ADC_ATTEN_DB_11 //0-2.5v
 
 #define LED_RED GPIO_NUM_5
-#define LED_BLUE GPIO_NUM_7
-#define LED_GREEN GPIO_NUM_6
+#define LED_BLUE GPIO_NUM_6
+#define LED_GREEN GPIO_NUM_7
 #define setPin(pin, state) gpio_set_level(pin, state)
 
 static uint8_t s_led_state = 0b1;
