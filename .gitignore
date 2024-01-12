@@ -1,3 +1,6 @@
 *
 !main/**
 !.gitignore
+!CMakeLists.txt
+!pytest_adc_continuous.py
+build/**
