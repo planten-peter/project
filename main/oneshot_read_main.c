@@ -16,6 +16,7 @@
 #include "driver/gpio.h"
 #include "sdkconfig.h"
 #include "soil_sensor.c"
+#include "driver/gptimer.h"
 
 
 const static char *TAG = "EXAMPLE";
@@ -95,6 +96,8 @@ static void ADC_setup(adc_oneshot_unit_handle_t* adc1_handle){
 }
 
 void app_main(void){
+    i2c_port_t port = setup_soil_sensor(GPIO_NUM_18, GPIO_NUM_19);
+    read_soil_sensor(port);
     gptimer_handle_t timer = NULL;
     adc_oneshot_unit_handle_t adc1_handle = NULL;
     init();
