@@ -35,7 +35,7 @@ static uint8_t s_led_state = 0b1;
 static int adc_raw = 0; //int created to store data from photosensor
 
 static void configure_OUTPUT_pin(gpio_num_t pin, int state){
-    ESP_LOGI("Pin", "setting pin:%d to OUT", pin);
+    ESP_LOGI("Pin", "setting pin%d to OUT", pin);
     gpio_reset_pin(pin);
     /* Set the GPIO as a push/pull output */
     gpio_set_direction(pin, GPIO_MODE_OUTPUT);
