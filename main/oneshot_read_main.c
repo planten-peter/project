@@ -15,6 +15,7 @@
 #include "esp_adc/adc_cali_scheme.h"
 #include "driver/gpio.h"
 #include "sdkconfig.h"
+#include "soil_sensor.c"
 
 
 const static char *TAG = "EXAMPLE";
