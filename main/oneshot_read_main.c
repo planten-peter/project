@@ -97,7 +97,7 @@ static void ADC_setup(adc_oneshot_unit_handle_t* adc1_handle){
 
 void app_main(void){
     i2c_port_t port = setup_soil_sensor(GPIO_NUM_18, GPIO_NUM_19);
-    read_soil_sensor(port);
+    
     gptimer_handle_t timer = NULL;
     adc_oneshot_unit_handle_t adc1_handle = NULL;
     init();
@@ -108,23 +108,37 @@ void app_main(void){
     while (1) {
         //-------------ADC1 Read---------------//
         ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw));
-        ESP_LOGI(TAG, "ADC2 CH1 Raw: %d", adc_raw);
-        if(adc_raw > 2000 ){
+        // ESP_LOGI(TAG, "ADC2 CH1 Raw: %d", adc_raw);
+        bool allGood = true;
+        if(adc_raw < 2000){
             timer_expired = false;
             gptimer_stop(timer);          
             gptimer_set_raw_count(timer,0);
             gptimer_start(timer);
-            setPin(LED_RED,1);
-            setPin(LED_GREEN,0);
-            setPin(LED_BLUE,1);
-            ESP_LOGI("Color","GREEN");
         }
-        if(timer_expired) {
+        if(timer_expired){
+            allGood = false;
+            ESP_LOGI("Light-condition" , "Too dark");
+        }else{
+            ESP_LOGI("Light-condition", "All good");
+        }
+        if(read_soil_sensor(port) < 600){
+            allGood = false;
+            ESP_LOGI("Soil-condition","too Dry");
+        }else{
+            ESP_LOGI("Soil-condition","all good");
+        }
+        if(!allGood) {
             led_red_state = !led_red_state;
             setPin(LED_RED,led_red_state);
             setPin(LED_GREEN,1);
             setPin(LED_BLUE,1);
             ESP_LOGI("Color","RED");
+        }else{
+            setPin(LED_RED,1);
+            setPin(LED_GREEN,0);
+            setPin(LED_BLUE,1);
+            ESP_LOGI("Color","GREEN");
         }
         vTaskDelay((timer_expired ? 100 : 1000) / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
                                                                      //we are in red alert, and the while loop will run faster. If timer_expired false, 
