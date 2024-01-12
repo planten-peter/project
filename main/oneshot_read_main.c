@@ -111,23 +111,29 @@ void app_main(void){
         ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw));
         // ESP_LOGI(TAG, "ADC2 CH1 Raw: %d", adc_raw);
         bool allGood = true;
+        int soil = read_soil_sensor(port);
+
         if(adc_raw > minimumLight){
             timer_expired = false;
             gptimer_stop(timer);          
             gptimer_set_raw_count(timer,0);
             gptimer_start(timer);
         }
-        if(timer_expired || adc_raw > minimumLight){
+        if (timer_expired){
             allGood = false;
+        }
+        if(timer_expired || adc_raw <= minimumLight){
             ESP_LOGI("Light-condition" , "Too dark");
         }else{
             ESP_LOGI("Light-condition", "All good");
         }
-        if(read_soil_sensor(port) < 600){
+        if(soil < 800){
             allGood = false;
             ESP_LOGI("Soil-condition","too dry");
+            ESP_LOGI("EXAMPLE" , "%d" , soil);
         }else{
             ESP_LOGI("Soil-condition","All good");
+            ESP_LOGI("EXAMPLE" , "%d" , soil);
         }
         if(!allGood) {
             led_red_state = !led_red_state;
