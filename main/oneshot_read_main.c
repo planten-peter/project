@@ -15,6 +15,8 @@
 #include "esp_adc/adc_cali_scheme.h"
 #include "driver/gpio.h"
 #include "sdkconfig.h"
+#include "esp_timer.h" // Include the ESP timer header
+#include "driver/gptimer.h"   // Include the general-purpose timer header
 
 
 const static char *TAG = "EXAMPLE";
