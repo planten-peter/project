@@ -1,7 +1,9 @@
 *
+build/**
 !main/**
 !main/*
 !.gitignore
 !CMakeLists.txt
 !pytest_adc_continuous.py
-build/**
+!main/soil_sensor.c
+!main/soil_sensor.h
