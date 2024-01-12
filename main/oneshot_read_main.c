@@ -35,6 +35,8 @@ volatile bool timer_expired = false;
 #define LED_GREEN GPIO_NUM_7
 #define setPin(pin, state) gpio_set_level(pin, state)
 
+#define minimumLight 2000
+
 static int adc_raw = 0; //int created to store data from photosensor
 static int led_red_state = 1; //int created to store the state of the red-led (1 off / 0 on)
 
@@ -97,7 +99,6 @@ static void ADC_setup(adc_oneshot_unit_handle_t* adc1_handle){
 
 void app_main(void){
     i2c_port_t port = setup_soil_sensor(GPIO_NUM_18, GPIO_NUM_19);
-    
     gptimer_handle_t timer = NULL;
     adc_oneshot_unit_handle_t adc1_handle = NULL;
     init();
@@ -110,13 +111,13 @@ void app_main(void){
         ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw));
         // ESP_LOGI(TAG, "ADC2 CH1 Raw: %d", adc_raw);
         bool allGood = true;
-        if(adc_raw < 2000){
+        if(adc_raw > minimumLight){
             timer_expired = false;
             gptimer_stop(timer);          
             gptimer_set_raw_count(timer,0);
             gptimer_start(timer);
         }
-        if(timer_expired){
+        if(timer_expired || adc_raw > minimumLight){
             allGood = false;
             ESP_LOGI("Light-condition" , "Too dark");
         }else{
@@ -124,9 +125,9 @@ void app_main(void){
         }
         if(read_soil_sensor(port) < 600){
             allGood = false;
-            ESP_LOGI("Soil-condition","too Dry");
+            ESP_LOGI("Soil-condition","too dry");
         }else{
-            ESP_LOGI("Soil-condition","all good");
+            ESP_LOGI("Soil-condition","All good");
         }
         if(!allGood) {
             led_red_state = !led_red_state;
@@ -140,7 +141,7 @@ void app_main(void){
             setPin(LED_BLUE,1);
             ESP_LOGI("Color","GREEN");
         }
-        vTaskDelay((timer_expired ? 100 : 1000) / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
+        vTaskDelay((!allGood ? 100 : 1000) / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
                                                                      //we are in red alert, and the while loop will run faster. If timer_expired false, 
                                                                      //less frequently
     }
