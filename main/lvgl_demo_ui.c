@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: CC0-1.0
  */
 
- #include "lvgl.h"
+#include "lvgl.h"
 
-void example_lvgl_demo_ui(lv_disp_t *disp, char* msg)
+void example_lvgl_demo_ui(lv_disp_t* disp, char* msg)
 {
     lv_obj_t *scr = lv_disp_get_scr_act(disp);
     lv_obj_t *label = lv_label_create(scr);
