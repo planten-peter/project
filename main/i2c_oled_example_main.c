@@ -50,8 +50,8 @@ static bool notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_
     lvgl_port_flush_ready(disp);
     return false;
 }
-
-void app_main(void)
+lv_disp_t* disp;
+lv_disp_t* generateDisp(void)
 {
     ESP_LOGI(TAG, "Initialize I2C bus");
     i2c_config_t i2c_conf = {
@@ -105,7 +105,7 @@ void app_main(void)
             .mirror_y = false,
         }
     };
-    lv_disp_t * disp = lvgl_port_add_disp(&disp_cfg);
+    disp = lvgl_port_add_disp(&disp_cfg);
     /* Register done callback for IO */
     const esp_lcd_panel_io_callbacks_t cbs = {
         .on_color_trans_done = notify_lvgl_flush_ready,
@@ -116,5 +116,5 @@ void app_main(void)
     lv_disp_set_rotation(disp, LV_DISP_ROT_NONE);
 
     ESP_LOGI(TAG, "Display LVGL Scroll Text");
-    example_lvgl_demo_ui(disp);
+    return disp;
 }

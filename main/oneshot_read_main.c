@@ -17,7 +17,8 @@
 #include "sdkconfig.h"
 #include "soil_sensor.c"
 #include "driver/gptimer.h"
-
+#include "i2c_oled_example_main.c"
+#include "lvgl_demo_ui.c"
 
 const static char *TAG = "EXAMPLE";
 
@@ -106,6 +107,7 @@ void app_main(void){
     ADC_setup(&adc1_handle);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     ESP_ERROR_CHECK_WITHOUT_ABORT(gptimer_start(timer));
+    lv_disp_t* disp = generateDisp();
     while (1) {
         //-------------ADC1 Read---------------//
         ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw));
@@ -119,13 +121,15 @@ void app_main(void){
         }
         if(timer_expired || adc_raw > minimumLight){
             allGood = false;
+            example_lvgl_demo_ui(disp,"Too dark")
             ESP_LOGI("Light-condition" , "Too dark");
         }else{
             ESP_LOGI("Light-condition", "All good");
         }
         if(read_soil_sensor(port) < 600){
             allGood = false;
-            ESP_LOGI("Soil-condition","too dry");
+            example_lvgl_demo_ui(disp,"Too dry")
+            ESP_LOGI("Soil-condition","Too dry");
         }else{
             ESP_LOGI("Soil-condition","All good");
         }
@@ -140,6 +144,7 @@ void app_main(void){
             setPin(LED_GREEN,0);
             setPin(LED_BLUE,1);
             ESP_LOGI("Color","GREEN");
+            example_lvgl_demo_ui(disp,"All good")
         }
         vTaskDelay((!allGood ? 100 : 1000) / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
                                                                      //we are in red alert, and the while loop will run faster. If timer_expired false, 
