@@ -59,5 +59,6 @@ unsigned short read_soil_sensor(i2c_port_t port) {
     printf("ERROR: Unable to read soil sensor: %x\n", err);
   }
   unsigned short r = ((uint16_t) rbuf[0]) << 8 | ((uint16_t) rbuf[1]);
+  printf("Soil sensor value: %d\n", r);
   return r;
 }

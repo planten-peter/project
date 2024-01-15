@@ -31,8 +31,8 @@ volatile bool timer_expired = false;
 #define EXAMPLE_ADC1_CHAN1          ADC_CHANNEL_0 //GPIO 0
 #define EXAMPLE_ADC_ATTEN           ADC_ATTEN_DB_11 //0-2.5v
 
-#define LED_RED GPIO_NUM_5
-#define LED_BLUE GPIO_NUM_6
+#define LED_RED GPIO_NUM_9
+#define LED_BLUE GPIO_NUM_8
 #define LED_GREEN GPIO_NUM_7
 #define IC2_SDA GPIO_NUM_18
 #define IC2_SCL GPIO_NUM_19
@@ -110,6 +110,7 @@ void app_main(void){
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     ESP_ERROR_CHECK_WITHOUT_ABORT(gptimer_start(timer));
     lv_disp_t* disp = generateDisp();
+    lv_obj_t* old = NULL;
     while (1) {
         //-------------ADC1 Read---------------//
         ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw));
@@ -121,16 +122,17 @@ void app_main(void){
             gptimer_set_raw_count(timer,0);
             gptimer_start(timer);
         }
-        if(timer_expired || adc_raw > minimumLight){
+        if(timer_expired || adc_raw < minimumLight){
             allGood = false;
-            example_lvgl_demo_ui(disp,"Too dark");
+            // old = example_lvgl_demo_ui(disp,"Too dark",old);
             ESP_LOGI("Light-condition" , "Too dark");
         }else{
             ESP_LOGI("Light-condition", "All good");
         }
         if(read_soil_sensor(port) < 600){
             allGood = false;
-            example_lvgl_demo_ui(disp,"Too dry");
+            old = example_lvgl_demo_ui(disp,"Too dry",old);
+            vTaskDelay(100/portTICK_PERIOD_MS);
             ESP_LOGI("Soil-condition","Too dry");
         }else{
             ESP_LOGI("Soil-condition","All good");
@@ -146,9 +148,10 @@ void app_main(void){
             setPin(LED_GREEN,0);
             setPin(LED_BLUE,1);
             ESP_LOGI("Color","GREEN");
-            example_lvgl_demo_ui(disp,"All good");
+            vTaskDelay(100/portTICK_PERIOD_MS);
+            old = example_lvgl_demo_ui(disp,"All good",old);
         }
-        vTaskDelay((!allGood ? 100 : 1000) / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
+        vTaskDelay((!allGood ? 300 : 300) / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
                                                                      //we are in red alert, and the while loop will run faster. If timer_expired false, 
                                                                      //less frequently
     }
