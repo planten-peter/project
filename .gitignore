@@ -5,9 +5,7 @@ build/**
 !.gitignore
 !CMakeLists.txt
 !pytest_adc_continuous.py
-
 !main/soil_sensor.c
 !main/soil_sensor.h
-
-!main/i2c_oled_example_main.c
-!main/lvgl_demo_ui.c
+!i2c_oled_example_main.c
+!lvgl_demo_ui.c
