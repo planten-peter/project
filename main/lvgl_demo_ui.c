@@ -10,6 +10,7 @@ void example_lvgl_demo_ui(lv_disp_t* disp, char* msg)
 {
     lv_obj_t *scr = lv_disp_get_scr_act(disp);
     lv_obj_t *label = lv_label_create(scr);
+    lv_obj_clean(scr);
     lv_label_set_long_mode(label, LV_LABEL_LONG_SCROLL_CIRCULAR); /* Circular scroll */
     lv_label_set_text(label, msg);
     
