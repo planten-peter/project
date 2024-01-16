@@ -10,6 +10,8 @@
 
 #define RBUF_SIZE 2
 
+#define readCount 5
+
 // Function to set up the soil sensor
 i2c_port_t setup_soil_sensor(int sda_pin, int scl_pin) {
   esp_err_t err;
@@ -21,7 +23,7 @@ i2c_port_t setup_soil_sensor(int sda_pin, int scl_pin) {
     .scl_io_num = scl_pin,
     .sda_pullup_en = GPIO_PULLUP_ENABLE,
     .scl_pullup_en = GPIO_PULLUP_ENABLE,
-    .master.clk_speed = 400000,
+    .master.clk_speed = 100000,
   };
 
   err = i2c_param_config(i2c_master_port, &i2c_conf);
@@ -50,16 +52,24 @@ i2c_port_t setup_soil_sensor(int sda_pin, int scl_pin) {
  *  
  */
 unsigned short read_soil_sensor(i2c_port_t port) {
-  esp_err_t err;
-  uint8_t wbuf[2] = {SOIL_BASE_ADDR, SOIL_F_REG};
-  uint8_t rbuf[RBUF_SIZE];
+  int sum = 0;
+  int succes = 0;
+  for (int i = 0; i < readCount; i++)
+  {
+    esp_err_t err;
+    uint8_t wbuf[2] = {SOIL_BASE_ADDR, SOIL_F_REG};
+    uint8_t rbuf[RBUF_SIZE];
 
-  err = i2c_master_write_read_device(port, STEMMA_ADDR, wbuf, 2, rbuf, RBUF_SIZE, I2C_TIMEOUT_MS / portTICK_PERIOD_MS);
-  if (err != ESP_OK) {
-    printf("ERROR: Unable to read soil sensor: %x\n", err);
-    printf("Soil sensor values: 0x%x:0x%x\n", rbuf[0],rbuf[1]);
+    err = i2c_master_write_read_device(port, STEMMA_ADDR, wbuf, 2, rbuf, RBUF_SIZE, I2C_TIMEOUT_MS / portTICK_PERIOD_MS);
+    if (err != ESP_OK) {
+      continue;
+    }
+    sum += ((uint16_t) rbuf[0]) << 8 | ((uint16_t) rbuf[1]);
+    succes++;
   }
-  unsigned short r = ((uint16_t) rbuf[0]) << 8 | ((uint16_t) rbuf[1]);
-  printf("Soil sensor value: %d\n", r);
-  return r;
+  if(succes == 0) {
+    printf("ERROR: failed to read soil sensor %d times\n",readCount);
+    return sum;
+  }
+  return sum / succes;
 }
