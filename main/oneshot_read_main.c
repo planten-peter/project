@@ -138,6 +138,14 @@ void app_main(void){
             ESP_LOGI("Soil-condition","All good");
         }
         if(!allGood) {
+            for (size_t i = 0; i < 9; i++)
+            {
+                led_red_state = !led_red_state;
+                setPin(LED_RED,led_red_state);
+                setPin(LED_GREEN,1);
+                setPin(LED_BLUE,1);
+                vTaskDelay(100 / portTICK_PERIOD_MS);
+            }
             led_red_state = !led_red_state;
             setPin(LED_RED,led_red_state);
             setPin(LED_GREEN,1);
@@ -151,7 +159,7 @@ void app_main(void){
             vTaskDelay(100/portTICK_PERIOD_MS);
             old = example_lvgl_demo_ui(disp,"All good",old);
         }
-        vTaskDelay((!allGood ? 300 : 300) / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
+        vTaskDelay((allGood ? 1000 : 100) / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
                                                                      //we are in red alert, and the while loop will run faster. If timer_expired false, 
                                                                      //less frequently
     }
