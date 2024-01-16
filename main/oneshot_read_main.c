@@ -116,6 +116,8 @@ void app_main(void){
         ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw));
         // ESP_LOGI(TAG, "ADC2 CH1 Raw: %d", adc_raw);
         bool allGood = true;
+        int soil = read_soil_sensor(port);
+
         if(adc_raw > minimumLight){
             timer_expired = false;
             gptimer_stop(timer);          
@@ -124,18 +126,17 @@ void app_main(void){
         }
         if(timer_expired || adc_raw < minimumLight){
             allGood &= !timer_expired;
-            // old = example_lvgl_demo_ui(disp,"Too dark",old);
             ESP_LOGI("Light-condition" , "Too dark");
         }else{
             ESP_LOGI("Light-condition", "All good");
         }
-        if(read_soil_sensor(port) < 600){
+        if(soil < 800){
             allGood = false;
             old = example_lvgl_demo_ui(disp,"Too dry",old);
-            vTaskDelay(100/portTICK_PERIOD_MS);
             ESP_LOGI("Soil-condition","Too dry");
         }else{
             ESP_LOGI("Soil-condition","All good");
+            ESP_LOGI("EXAMPLE" , "%d" , soil);
         }
         if(!allGood) {
             for (size_t i = 0; i < 9; i++)
