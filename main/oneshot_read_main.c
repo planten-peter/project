@@ -58,8 +58,9 @@ static void init(void){
     configure_OUTPUT_pin(LED_RED,1);
     configure_OUTPUT_pin(LED_GREEN,1);
 }
-void IRAM_ATTR timer_isr_handler(void* arg) {
+bool IRAM_ATTR timer_isr_handler(struct gptimer_t *, const gptimer_alarm_event_data_t *, void * arg) {
     timer_expired = true;
+    return true;
 }
 
 static void timer_setup(gptimer_handle_t* timer){
@@ -72,10 +73,10 @@ static void timer_setup(gptimer_handle_t* timer){
         .resolution_hz = 1 * 1000 * 1000, // 1mHz, 1 tick = 1us
     };
     gptimer_alarm_config_t alarm_config = {//choose how long to wait for the alarm
-        .alarm_count = 5 * 1000 * 1000ULL, // 5s, use unsigned long long type
+        .alarm_count = 10 * 1000 * 1000ULL, // 5s, use unsigned long long type
     };
     gptimer_event_callbacks_t call = {//choose callback of the timer (on interrupt)
-        .on_alarm = timer_isr_handler,
+        .on_alarm =  timer_isr_handler,
     };
     
     ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, timer));//check for error when making timer
@@ -113,55 +114,98 @@ void app_main(void){
     lv_obj_t* old = NULL;
     while (1) {
         //-------------ADC1 Read---------------//
-        ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw));
-        // ESP_LOGI(TAG, "ADC2 CH1 Raw: %d", adc_raw);
-        bool allGood = true;
+        adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw);
         int soil = read_soil_sensor(port);
-        
+        uint8_t problems = (adc_raw < minimumLight) | (timer_expired << 1) | ((soil < 700) << 2); // contains all errors
+        ESP_LOGI("Result", "0b%d%d%d", (problems&0b100) == 0b100,(problems&0b010) == 0b010,(problems&0b001) == 0b001);
+
         if(adc_raw > minimumLight){
             timer_expired = false;
             gptimer_stop(timer);          
             gptimer_set_raw_count(timer,0);
             gptimer_start(timer);
+            ESP_LOGI("light","%d", adc_raw);
         }
-        if(timer_expired || adc_raw < minimumLight){
-            allGood &= !timer_expired;
-            ESP_LOGI("Light-condition" , "Too dark");
-        }else{
-            ESP_LOGI("Light-condition", "All good");
-        }
-        if(soil < 800){
-            allGood = false;
-            old = example_lvgl_demo_ui(disp,"Too dry",old);
-            ESP_LOGI("Soil-condition","Too dry");
-        }else{
-            ESP_LOGI("Soil-condition","All good");
-            ESP_LOGI("EXAMPLE" , "%d" , soil);
-        }
-        if(!allGood) {
-            for (size_t i = 0; i < 9; i++)
-            {
-                led_red_state = !led_red_state;
-                setPin(LED_RED,led_red_state);
-                setPin(LED_GREEN,1);
-                setPin(LED_BLUE,1);
-                vTaskDelay(100 / portTICK_PERIOD_MS);
-            }
-            led_red_state = !led_red_state;
-            setPin(LED_RED,led_red_state);
-            setPin(LED_GREEN,1);
-            setPin(LED_BLUE,1);
-            ESP_LOGI("Color","RED");
-        }else{
+
+        switch (problems){
+        case 0b000:
             setPin(LED_RED,1);
             setPin(LED_GREEN,0);
             setPin(LED_BLUE,1);
-            ESP_LOGI("Color","GREEN");
             vTaskDelay(100/portTICK_PERIOD_MS);
             old = example_lvgl_demo_ui(disp,"All good",old);
+            break;
+        case 0b001:
+            old = example_lvgl_demo_ui(disp, "too dark", old);
+            setPin(LED_RED,1);
+            setPin(LED_GREEN,0);
+            setPin(LED_BLUE,1);
+            break;
+        case 0b010:
+        case 0b011:
+            old = example_lvgl_demo_ui(disp, "too dark", old);
+            setPin(LED_RED,led_red_state);
+            setPin(LED_GREEN,1);
+            setPin(LED_BLUE,1);
+            break;
+        case 0b100:
+            old = example_lvgl_demo_ui(disp, "too dry", old);
+            setPin(LED_RED,led_red_state);
+            setPin(LED_GREEN,1);
+            setPin(LED_BLUE,1);
+            break;
+        case 0b101:
+        case 0b110:
+        case 0b111:
+            old = example_lvgl_demo_ui(disp, "too dark\ntoo dry", old);
+            setPin(LED_RED,led_red_state);
+            setPin(LED_GREEN,1);
+            setPin(LED_BLUE,1);
+            break;
+        default:
+            ESP_LOGI("ERROR", "Something went wrong");
         }
-        vTaskDelay((allGood ? 1000 : 100) / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
+        led_red_state = !led_red_state;
+        vTaskDelay(100 / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
                                                                      //we are in red alert, and the while loop will run faster. If timer_expired false, 
                                                                      //less frequently
+
+        // bool allGood = true;
+        // if(timer_expired || adc_raw < minimumLight){
+        //     allGood &= !timer_expired;
+        //     ESP_LOGI("Light-condition" , "Too dark");
+        // }else{
+        //     ESP_LOGI("Light-condition", "All good");
+        // }
+        // if(soil < 800){
+        //     allGood = false;
+        //     old = example_lvgl_demo_ui(disp,"Too dry",old);
+        //     ESP_LOGI("Soil-condition","Too dry");
+        // }else{
+        //     ESP_LOGI("Soil-condition","All good");
+        //     ESP_LOGI("EXAMPLE" , "%d" , soil);
+        // }
+        // if(!allGood) {
+        //     for (size_t i = 0; i < 9; i++)
+        //     {
+        //         led_red_state = !led_red_state;
+        //         setPin(LED_RED,led_red_state);
+        //         setPin(LED_GREEN,1);
+        //         setPin(LED_BLUE,1);
+        //         vTaskDelay(100 / portTICK_PERIOD_MS);
+        //     }
+        //     led_red_state = !led_red_state;
+        //     setPin(LED_RED,led_red_state);
+        //     setPin(LED_GREEN,1);
+        //     setPin(LED_BLUE,1);
+        //     ESP_LOGI("Color","RED");
+        // }else{
+        //     setPin(LED_RED,1);
+        //     setPin(LED_GREEN,0);
+        //     setPin(LED_BLUE,1);
+        //     ESP_LOGI("Color","GREEN");
+        //     vTaskDelay(100/portTICK_PERIOD_MS);
+        //     old = example_lvgl_demo_ui(disp,"All good",old);
+        // }
     }
 }
