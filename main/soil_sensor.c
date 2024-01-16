@@ -57,6 +57,7 @@ unsigned short read_soil_sensor(i2c_port_t port) {
   err = i2c_master_write_read_device(port, STEMMA_ADDR, wbuf, 2, rbuf, RBUF_SIZE, I2C_TIMEOUT_MS / portTICK_PERIOD_MS);
   if (err != ESP_OK) {
     printf("ERROR: Unable to read soil sensor: %x\n", err);
+    printf("Soil sensor values: 0x%x:0x%x\n", rbuf[0],rbuf[1]);
   }
   unsigned short r = ((uint16_t) rbuf[0]) << 8 | ((uint16_t) rbuf[1]);
   printf("Soil sensor value: %d\n", r);
