@@ -1,5 +1,6 @@
 *
 build/**
+!main
 !main/**
 !main/*
 !.gitignore
@@ -7,3 +8,5 @@ build/**
 !pytest_adc_continuous.py
 !main/soil_sensor.c
 !main/soil_sensor.h
+!i2c_oled_example_main.c
+!lvgl_demo_ui.c
