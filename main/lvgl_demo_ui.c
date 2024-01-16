@@ -9,7 +9,7 @@
 lv_obj_t* example_lvgl_demo_ui(lv_disp_t* disp, char* msg, lv_obj_t* old)
 {
     lv_obj_t* scr = lv_disp_get_scr_act(disp); //Get the current screen
-    if(old != NULL){
+    if(old == NULL){
         old = lv_label_create(scr); //Create a label on the currently active screen
     }
     lv_label_set_long_mode(old, LV_LABEL_LONG_SCROLL_CIRCULAR); /* Circular scroll */
