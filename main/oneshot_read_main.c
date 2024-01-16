@@ -31,8 +31,8 @@ volatile bool timer_expired = false;
 #define EXAMPLE_ADC1_CHAN1          ADC_CHANNEL_0 //GPIO 0
 #define EXAMPLE_ADC_ATTEN           ADC_ATTEN_DB_11 //0-2.5v
 
-#define LED_RED GPIO_NUM_9
-#define LED_BLUE GPIO_NUM_8
+#define LED_RED GPIO_NUM_5
+#define LED_BLUE GPIO_NUM_6
 #define LED_GREEN GPIO_NUM_7
 #define IC2_SDA GPIO_NUM_18
 #define IC2_SCL GPIO_NUM_19
@@ -123,7 +123,7 @@ void app_main(void){
             gptimer_start(timer);
         }
         if(timer_expired || adc_raw < minimumLight){
-            allGood = false;
+            allGood &= !timer_expired;
             // old = example_lvgl_demo_ui(disp,"Too dark",old);
             ESP_LOGI("Light-condition" , "Too dark");
         }else{
