@@ -124,7 +124,7 @@ void app_main(void){
             gptimer_stop(timer);          
             gptimer_set_raw_count(timer,0);
             gptimer_start(timer);
-            ESP_LOGI("light","%d", adc_raw);
+            // ESP_LOGI("light","%d", adc_raw);
         }
 
         switch (problems){

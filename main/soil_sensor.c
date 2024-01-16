@@ -23,7 +23,7 @@ i2c_port_t setup_soil_sensor(int sda_pin, int scl_pin) {
     .scl_io_num = scl_pin,
     .sda_pullup_en = GPIO_PULLUP_ENABLE,
     .scl_pullup_en = GPIO_PULLUP_ENABLE,
-    .master.clk_speed = 40000,
+    .master.clk_speed = 100000,
   };
 
   err = i2c_param_config(i2c_master_port, &i2c_conf);
