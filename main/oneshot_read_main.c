@@ -117,7 +117,7 @@ void app_main(void){
         // ESP_LOGI(TAG, "ADC2 CH1 Raw: %d", adc_raw);
         bool allGood = true;
         int soil = read_soil_sensor(port);
-
+        
         if(adc_raw > minimumLight){
             timer_expired = false;
             gptimer_stop(timer);          
