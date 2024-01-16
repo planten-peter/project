@@ -17,9 +17,10 @@
 #include "sdkconfig.h"
 #include "soil_sensor.c"
 #include "driver/gptimer.h"
+#include "i2c_oled_example_main.c"
+#include "lvgl_demo_ui.c"
 
-
-const static char *TAG = "EXAMPLE";
+// const static char *TAG = "EXAMPLE";
 
 volatile bool timer_expired = false;
 
@@ -33,6 +34,8 @@ volatile bool timer_expired = false;
 #define LED_RED GPIO_NUM_5
 #define LED_BLUE GPIO_NUM_6
 #define LED_GREEN GPIO_NUM_7
+#define IC2_SDA GPIO_NUM_18
+#define IC2_SCL GPIO_NUM_19
 #define setPin(pin, state) gpio_set_level(pin, state)
 
 #define minimumLight 2000
@@ -98,7 +101,7 @@ static void ADC_setup(adc_oneshot_unit_handle_t* adc1_handle){
 }
 
 void app_main(void){
-    i2c_port_t port = setup_soil_sensor(GPIO_NUM_18, GPIO_NUM_19);
+    i2c_port_t port = setup_soil_sensor(IC2_SDA, IC2_SCL);
     gptimer_handle_t timer = NULL;
     adc_oneshot_unit_handle_t adc1_handle = NULL;
     init();
@@ -106,6 +109,8 @@ void app_main(void){
     ADC_setup(&adc1_handle);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     ESP_ERROR_CHECK_WITHOUT_ABORT(gptimer_start(timer));
+    lv_disp_t* disp = generateDisp();
+    lv_obj_t* old = NULL;
     while (1) {
         //-------------ADC1 Read---------------//
         ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw));
@@ -119,23 +124,29 @@ void app_main(void){
             gptimer_set_raw_count(timer,0);
             gptimer_start(timer);
         }
-        if (timer_expired){
-            allGood = false;
-        }
-        if(timer_expired || adc_raw <= minimumLight){
+        if(timer_expired || adc_raw < minimumLight){
+            allGood &= !timer_expired;
             ESP_LOGI("Light-condition" , "Too dark");
         }else{
             ESP_LOGI("Light-condition", "All good");
         }
         if(soil < 800){
             allGood = false;
-            ESP_LOGI("Soil-condition","too dry");
-            ESP_LOGI("EXAMPLE" , "%d" , soil);
+            old = example_lvgl_demo_ui(disp,"Too dry",old);
+            ESP_LOGI("Soil-condition","Too dry");
         }else{
             ESP_LOGI("Soil-condition","All good");
             ESP_LOGI("EXAMPLE" , "%d" , soil);
         }
         if(!allGood) {
+            for (size_t i = 0; i < 9; i++)
+            {
+                led_red_state = !led_red_state;
+                setPin(LED_RED,led_red_state);
+                setPin(LED_GREEN,1);
+                setPin(LED_BLUE,1);
+                vTaskDelay(100 / portTICK_PERIOD_MS);
+            }
             led_red_state = !led_red_state;
             setPin(LED_RED,led_red_state);
             setPin(LED_GREEN,1);
@@ -146,8 +157,10 @@ void app_main(void){
             setPin(LED_GREEN,0);
             setPin(LED_BLUE,1);
             ESP_LOGI("Color","GREEN");
+            vTaskDelay(100/portTICK_PERIOD_MS);
+            old = example_lvgl_demo_ui(disp,"All good",old);
         }
-        vTaskDelay((!allGood ? 100 : 1000) / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
+        vTaskDelay((allGood ? 1000 : 100) / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
                                                                      //we are in red alert, and the while loop will run faster. If timer_expired false, 
                                                                      //less frequently
     }
