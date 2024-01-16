@@ -169,43 +169,5 @@ void app_main(void){
         vTaskDelay(100 / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
                                                                      //we are in red alert, and the while loop will run faster. If timer_expired false, 
                                                                      //less frequently
-
-        // bool allGood = true;
-        // if(timer_expired || adc_raw < minimumLight){
-        //     allGood &= !timer_expired;
-        //     ESP_LOGI("Light-condition" , "Too dark");
-        // }else{
-        //     ESP_LOGI("Light-condition", "All good");
-        // }
-        // if(soil < 800){
-        //     allGood = false;
-        //     old = example_lvgl_demo_ui(disp,"Too dry",old);
-        //     ESP_LOGI("Soil-condition","Too dry");
-        // }else{
-        //     ESP_LOGI("Soil-condition","All good");
-        //     ESP_LOGI("EXAMPLE" , "%d" , soil);
-        // }
-        // if(!allGood) {
-        //     for (size_t i = 0; i < 9; i++)
-        //     {
-        //         led_red_state = !led_red_state;
-        //         setPin(LED_RED,led_red_state);
-        //         setPin(LED_GREEN,1);
-        //         setPin(LED_BLUE,1);
-        //         vTaskDelay(100 / portTICK_PERIOD_MS);
-        //     }
-        //     led_red_state = !led_red_state;
-        //     setPin(LED_RED,led_red_state);
-        //     setPin(LED_GREEN,1);
-        //     setPin(LED_BLUE,1);
-        //     ESP_LOGI("Color","RED");
-        // }else{
-        //     setPin(LED_RED,1);
-        //     setPin(LED_GREEN,0);
-        //     setPin(LED_BLUE,1);
-        //     ESP_LOGI("Color","GREEN");
-        //     vTaskDelay(100/portTICK_PERIOD_MS);
-        //     old = example_lvgl_demo_ui(disp,"All good",old);
-        // }
     }
 }
