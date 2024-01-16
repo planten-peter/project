@@ -31,14 +31,15 @@ volatile bool timer_expired = false;
 #define EXAMPLE_ADC1_CHAN1          ADC_CHANNEL_0 //GPIO 0
 #define EXAMPLE_ADC_ATTEN           ADC_ATTEN_DB_11 //0-2.5v
 
-#define LED_RED GPIO_NUM_5
+#define LED_RED GPIO_NUM_7
 #define LED_BLUE GPIO_NUM_6
-#define LED_GREEN GPIO_NUM_7
+#define LED_GREEN GPIO_NUM_5
 #define IC2_SDA GPIO_NUM_18
 #define IC2_SCL GPIO_NUM_19
 #define setPin(pin, state) gpio_set_level(pin, state)
 
-#define minimumLight 2000
+#define minimumLight 3500
+#define timerInSeconds 5
 
 static int adc_raw = 0; //int created to store data from photosensor
 static int led_red_state = 1; //int created to store the state of the red-led (1 off / 0 on)
@@ -73,7 +74,7 @@ static void timer_setup(gptimer_handle_t* timer){
         .resolution_hz = 1 * 1000 * 1000, // 1mHz, 1 tick = 1us
     };
     gptimer_alarm_config_t alarm_config = {//choose how long to wait for the alarm
-        .alarm_count = 10 * 1000 * 1000ULL, // 5s, use unsigned long long type
+        .alarm_count = timerInSeconds * 1000 * 1000ULL, // use unsigned long long type
     };
     gptimer_event_callbacks_t call = {//choose callback of the timer (on interrupt)
         .on_alarm =  timer_isr_handler,
@@ -101,17 +102,29 @@ static void ADC_setup(adc_oneshot_unit_handle_t* adc1_handle){
     ESP_ERROR_CHECK(adc_oneshot_config_channel(*adc1_handle, EXAMPLE_ADC1_CHAN1, &config));
 }
 
+static void green_LED(){
+    setPin(LED_RED,1);
+    setPin(LED_GREEN,0);
+    setPin(LED_BLUE,1);
+}
+static void red_LED(){
+    setPin(LED_RED,led_red_state);
+    setPin(LED_GREEN,1);
+    setPin(LED_BLUE,1);
+}
+
 void app_main(void){
     i2c_port_t port = setup_soil_sensor(IC2_SDA, IC2_SCL);
     gptimer_handle_t timer = NULL;
     adc_oneshot_unit_handle_t adc1_handle = NULL;
     init();
+    ESP_LOGI("light","blue led on");
     timer_setup(&timer);
     ADC_setup(&adc1_handle);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
     ESP_ERROR_CHECK_WITHOUT_ABORT(gptimer_start(timer));
     lv_disp_t* disp = generateDisp();
     lv_obj_t* old = NULL;
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
     while (1) {
         //-------------ADC1 Read---------------//
         adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw);
@@ -129,38 +142,28 @@ void app_main(void){
 
         switch (problems){
         case 0b000:
-            setPin(LED_RED,1);
-            setPin(LED_GREEN,0);
-            setPin(LED_BLUE,1);
+            green_LED();
             vTaskDelay(100/portTICK_PERIOD_MS);
             old = example_lvgl_demo_ui(disp,"All good",old);
             break;
         case 0b001:
             old = example_lvgl_demo_ui(disp, "too dark", old);
-            setPin(LED_RED,1);
-            setPin(LED_GREEN,0);
-            setPin(LED_BLUE,1);
+            green_LED();
             break;
         case 0b010:
         case 0b011:
             old = example_lvgl_demo_ui(disp, "too dark", old);
-            setPin(LED_RED,led_red_state);
-            setPin(LED_GREEN,1);
-            setPin(LED_BLUE,1);
+            red_LED();
             break;
         case 0b100:
             old = example_lvgl_demo_ui(disp, "too dry", old);
-            setPin(LED_RED,led_red_state);
-            setPin(LED_GREEN,1);
-            setPin(LED_BLUE,1);
+            red_LED();
             break;
         case 0b101:
         case 0b110:
         case 0b111:
             old = example_lvgl_demo_ui(disp, "too dark\ntoo dry", old);
-            setPin(LED_RED,led_red_state);
-            setPin(LED_GREEN,1);
-            setPin(LED_BLUE,1);
+            red_LED();
             break;
         default:
             ESP_LOGI("ERROR", "Something went wrong");
