@@ -53,7 +53,7 @@ static bool notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_
 lv_disp_t* disp;
 lv_disp_t* generateDisp(void)
 {
-    ESP_LOGI(TAG, "Install panel IO"); 
+    ESP_LOGI(TAG, "Install panel IO");
     esp_lcd_panel_io_handle_t io_handle = NULL;
     esp_lcd_panel_io_i2c_config_t io_config = {
         .dev_addr = EXAMPLE_I2C_HW_ADDR,
@@ -70,12 +70,12 @@ lv_disp_t* generateDisp(void)
         .bits_per_pixel = 1,
         .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
     };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_ssd1306(io_handle, &panel_config, &panel_handle));//Make the panel handle
-    ESP_ERROR_CHECK(esp_lcd_panel_reset(panel_handle)); //reset
-    ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));//init panel
-    ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));//turn on the display
+    ESP_ERROR_CHECK(esp_lcd_new_panel_ssd1306(io_handle, &panel_config, &panel_handle));
+    ESP_ERROR_CHECK(esp_lcd_panel_reset(panel_handle));
+    ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));
+    ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
 
-    ESP_LOGI(TAG, "Initialize LVGL");// How we will display the text and how we talk to the screen
+    ESP_LOGI(TAG, "Initialize LVGL");
     const lvgl_port_cfg_t lvgl_cfg = ESP_LVGL_PORT_INIT_CONFIG();
     lvgl_port_init(&lvgl_cfg);
 
@@ -93,7 +93,7 @@ lv_disp_t* generateDisp(void)
             .mirror_y = false,
         }
     };
-    disp = lvgl_port_add_disp(&disp_cfg); //make the display itself
+    disp = lvgl_port_add_disp(&disp_cfg);
     /* Register done callback for IO */
     const esp_lcd_panel_io_callbacks_t cbs = {
         .on_color_trans_done = notify_lvgl_flush_ready,
@@ -101,6 +101,8 @@ lv_disp_t* generateDisp(void)
     esp_lcd_panel_io_register_event_callbacks(io_handle, &cbs, disp);
 
     /* Rotation of the screen */
-    lv_disp_set_rotation(disp, LV_DISP_ROT_180);
+    lv_disp_set_rotation(disp, LV_DISP_ROT_NONE);
+
+    ESP_LOGI(TAG, "Display LVGL Scroll Text");
     return disp;
 }
