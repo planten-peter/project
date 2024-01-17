@@ -56,6 +56,7 @@ static void init(void){
     configure_OUTPUT_pin(LED_BLUE,0);// Blue led on at start
     configure_OUTPUT_pin(LED_RED,1);
     configure_OUTPUT_pin(LED_GREEN,1);
+    ESP_LOGI("light","blue led on");
 }
 
 bool IRAM_ATTR timer_isr_handler(struct gptimer_t *, const gptimer_alarm_event_data_t *, void * arg) {
@@ -89,16 +90,23 @@ static void timer_setup(gptimer_handle_t* timer){
 }
 
 static void ADC_setup(adc_oneshot_unit_handle_t* adc1_handle){
+//adc1_handle er en pointer til data af typen adc_oneshot_unit_handle_t
+
     //-------------ADC1 Init---------------// Analog Digital Converter
+        /* (demonstration af pointer ved hjælp af java syntax)
+        (C : java)
+            int : int i = 0;
+            int*: Integer i = 0;
+        */
     adc_oneshot_unit_init_cfg_t init_config1 = {
         .unit_id = ADC_UNIT_1,//PIN 0 on the on ESP32
-    };
+    };// Our initialization configuration for ADC1. We only need to set the ADC unit here. 
     ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config1, adc1_handle));
     
     //-------------ADC1 Config---------------//
     adc_oneshot_chan_cfg_t config = {
-        .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = EXAMPLE_ADC_ATTEN,
+        .bitwidth = ADC_BITWIDTH_DEFAULT, //bit bredden (det maksimale tal vi kan skriv)
+        .atten = EXAMPLE_ADC_ATTEN, //lav attennuation for præcision (tab af volt over en afstand)
     };
     ESP_ERROR_CHECK(adc_oneshot_config_channel(*adc1_handle, EXAMPLE_ADC1_CHAN1, &config));
 }
@@ -115,18 +123,18 @@ static void red_LED(){
 }
 
 void app_main(void){
-    i2c_port_t port = setup_soil_sensor(IC2_SDA, IC2_SCL);
-    gptimer_handle_t timer = NULL;
-    adc_oneshot_unit_handle_t adc1_handle = NULL;
-    init();
-    ESP_LOGI("light","blue led on");
-    timer_setup(&timer);
-    ADC_setup(&adc1_handle);
-    ESP_ERROR_CHECK_WITHOUT_ABORT(gptimer_start(timer));
-    lv_disp_t* disp = generateDisp();
-    lv_obj_t* old = NULL;
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
-    while (1) {
+    i2c_port_t port = I2C_setup(IC2_SDA, IC2_SCL);// setup I2C to the soil sensor and screen (via the relevand GPIO ports)
+    gptimer_handle_t timer = NULL; // timer handle
+    adc_oneshot_unit_handle_t adc1_handle = NULL; // adc handle
+    init(); // setup LED pins
+    timer_setup(&timer); // setup timer
+    ADC_setup(&adc1_handle); // setup ADC
+    ESP_ERROR_CHECK_WITHOUT_ABORT(gptimer_start(timer)); // start timer
+    lv_disp_t* disp = generateDisp(); // setup screen
+    lv_obj_t* old = NULL; // setup screen
+    vTaskDelay(3000 / portTICK_PERIOD_MS); // delay for 3 seconds
+
+    while (1) { // Nu sker der ting og sager
         //-------------ADC1 Read---------------//
         adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw);
         int soil = read_soil_sensor(port);
