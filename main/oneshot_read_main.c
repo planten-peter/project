@@ -34,6 +34,7 @@
 #define IC2_SCL GPIO_NUM_19
 #define setPin(pin, state) gpio_set_level(pin, state)
  
+#define minimumWater 700 //Minimum amount of acceptable water in the soil
 #define minimumLight 3500 //Minimum amount of acceptable light
 #define timerInSeconds 5 
 
@@ -42,6 +43,7 @@
 volatile bool timer_expired = false;
 static int adc_raw = 0; //int created to store data from photosensor
 static int led_red_state = 1; //int created to store the state of the red-led (1 off / 0 on)
+static int soil = 0; //int created to store data from soil sensor
 
 static void configure_OUTPUT_pin(gpio_num_t pin, int state){
     ESP_LOGI("Pin", "setting pin%d to OUT", pin);
@@ -117,6 +119,7 @@ static void green_LED(){
     setPin(LED_BLUE,1);
 }
 static void red_LED(){
+    led_red_state = !led_red_state;
     setPin(LED_RED,led_red_state);
     setPin(LED_GREEN,1);
     setPin(LED_BLUE,1);
@@ -131,56 +134,59 @@ void app_main(void){
     ADC_setup(&adc1_handle); // setup ADC
     ESP_ERROR_CHECK_WITHOUT_ABORT(gptimer_start(timer)); // start timer
     lv_disp_t* disp = generateDisp(); // setup screen
-    lv_obj_t* old = NULL; // setup screen
+    lv_obj_t* old = NULL; //the text displayed on the screen
     vTaskDelay(3000 / portTICK_PERIOD_MS); // delay for 3 seconds
 
     while (1) { // Nu sker der ting og sager
         //-------------ADC1 Read---------------//
         adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw);
-        int soil = read_soil_sensor(port);
-        uint8_t problems = (adc_raw < minimumLight) | (timer_expired << 1) | ((soil < 700) << 2); // contains all errors
-        ESP_LOGI("Result", "0b%d%d%d", (problems&0b100) == 0b100,(problems&0b010) == 0b010,(problems&0b001) == 0b001);
-
-        if(adc_raw > minimumLight){
-            timer_expired = false;
-            gptimer_stop(timer);          
-            gptimer_set_raw_count(timer,0);
-            gptimer_start(timer);
+        // read from adc1_handle via channel 1 and store the data under adc_raw (we have given the address (&) for adc_raw)  
+        soil = read_soil_sensor(port);// read from soil sensor
+        
+        if(adc_raw > minimumLight){ // if there is enough light, reset the timer
+            timer_expired = false; // 
+            gptimer_stop(timer);      // stop timer    
+            gptimer_set_raw_count(timer,0); // reset timer
+            gptimer_start(timer); // start timer
             // ESP_LOGI("light","%d", adc_raw);
         }
+        
+        uint8_t problems = ((soil < minimumWater) << 2) | (timer_expired << 1) | (adc_raw < minimumLight); // contains all errors (states) - a variable is true, if there is a problem
+        ESP_LOGI("Result", "0b%d%d%d", (problems&0b100) == 0b100,(problems&0b010) == 0b010,(problems&0b001) == 0b001);
 
         switch (problems){
-        case 0b000:
+        case 0b000://no problems
             green_LED();
             vTaskDelay(100/portTICK_PERIOD_MS);
-            old = example_lvgl_demo_ui(disp,"\nAll good",old);
+            old = example_lvgl_demo_ui(disp,"All good :-)\nSoil good\nLight good",old);
             break;
-        case 0b001:
-            old = example_lvgl_demo_ui(disp, "\ntoo dark", old);
+        case 0b001: //too dark for less than 5 sec
+            old = example_lvgl_demo_ui(disp, "Warning!\nToo dark\nSoil good", old);
             green_LED();
             break;
-        case 0b010:
-        case 0b011:
-            old = example_lvgl_demo_ui(disp, "\ntoo dark", old);
+        case 0b011: //too dark for 5 sec or longer
+            old = example_lvgl_demo_ui(disp, "Warning!\nToo dark\nSoil good", old);
             red_LED();
             break;
-        case 0b100:
-            old = example_lvgl_demo_ui(disp, "\ntoo dry", old);
+        case 0b100://only dry
+            old = example_lvgl_demo_ui(disp, "Warning!\nSoil dry \nLight good", old);
             red_LED();
             break;
         case 0b101:
-        case 0b110:
+        case 0b110://dry and more
         case 0b111:
-            old = example_lvgl_demo_ui(disp, "\ntoo dark\ntoo dry", old);
+            old = example_lvgl_demo_ui(disp, "Warning!\nSoil dry \nToo dark", old);
             red_LED();
             break;
         default:
-            ESP_LOGI("ERROR", "Something went wrong");
-            old = example_lvgl_demo_ui(disp, "something went wrong", old);
+        //'case 0b010:' excluded as this cannot happen (see line: 146-147 (update if code is changed))
+        //lack oof documentation on arrival to these states
+        //unknown error, outside possible states
+            ESP_LOGI("ERROR", "Something went wrong, code: %x", problems);
+            old = example_lvgl_demo_ui(disp, "Something went wrong", old);
+            vTaskDelay(10000 / portTICK_PERIOD_MS); // delay for 10 seconds
+            return;
         }
-        led_red_state = !led_red_state;
-        vTaskDelay(100 / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
-                                                                     //we are in red alert, and the while loop will run faster. If timer_expired false, 
-                                                                     //less frequently
+        vTaskDelay(500 / portTICK_PERIOD_MS); //delaying the while loop. This is to avoid spamming the screen with the same text
     }
 }

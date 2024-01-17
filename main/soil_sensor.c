@@ -61,24 +61,18 @@ i2c_port_t I2C_setup(int sda_pin, int scl_pin) {
  *  
  */
 unsigned short read_soil_sensor(i2c_port_t port) {
-  int sum = 0;
-  int succes = 0;
-  for (int i = 0; i < readCount; i++)
+  for (int i = 0; i < readCount; i++) //reads the sensor up to 5 times (if an error is detected (see line 71-72)) 
   {
     esp_err_t err;
     uint8_t wbuf[2] = {SOIL_BASE_ADDR, SOIL_F_REG};// What to write to the sensor
     uint8_t rbuf[RBUF_SIZE]; // where to read from the sensor 
               //I2C,sensor address,what to write,size of write,where to write response,size of response,timeout,
     err = i2c_master_write_read_device(port, STEMMA_ADDR, wbuf, 2, rbuf, RBUF_SIZE, I2C_TIMEOUT_MS / portTICK_PERIOD_MS);
-    if (err != ESP_OK) {
+    if (err != ESP_OK) {//If it fails to read the sensor it will try again 
       continue;
     }
-    sum += ((uint16_t) rbuf[0]) << 8 | ((uint16_t) rbuf[1]); //bitwise operation taking the number from the soil sensor (which consist of 2 bytes (rbuf0 and rbuf1))
-    succes++;                                                //we can only transfer 1 byte at a time, and after transfer we cast each byte into 16 bit and convert them into a single integer via bitwise operation
+    return ((uint16_t) rbuf[0]) << 8 | ((uint16_t) rbuf[1]); //bitwise operation taking the number from the soil sensor (which consist of 2 bytes (rbuf0 and rbuf1))
   }
-  if(succes == 0) {
-    printf("ERROR: failed to read soil sensor %d times\n",readCount);
-    return sum;
-  }
-  return sum / succes;
+  printf("ERROR: failed to read soil sensor %d times\n",readCount);
+  return 0;
 }
