@@ -20,46 +20,47 @@
 #include "i2c_oled_example_main.c"
 #include "lvgl_demo_ui.c"
 
-// const static char *TAG = "EXAMPLE";
-
-volatile bool timer_expired = false;
-
 /*---------------------------------------------------------------
         ADC General Macros
 ---------------------------------------------------------------*/
 //ADC1 Channels
-#define EXAMPLE_ADC1_CHAN1          ADC_CHANNEL_0 //GPIO 0
-#define EXAMPLE_ADC_ATTEN           ADC_ATTEN_DB_11 //0-2.5v
-
+#define EXAMPLE_ADC1_CHAN1 ADC_CHANNEL_0 //GPIO 0
+#define EXAMPLE_ADC_ATTEN ADC_ATTEN_DB_11 //0-2.5v
+//Sets Pins for the esp32c3 microcontroller
 #define LED_RED GPIO_NUM_7
 #define LED_BLUE GPIO_NUM_6
 #define LED_GREEN GPIO_NUM_5
 #define IC2_SDA GPIO_NUM_18
 #define IC2_SCL GPIO_NUM_19
 #define setPin(pin, state) gpio_set_level(pin, state)
+ 
+#define minimumLight 3500 //Minimum amount of acceptable light
+#define timerInSeconds 5 
 
-#define minimumLight 3500
-#define timerInSeconds 5
+//volatile means, in this program, that the variable can be changed by an interrupt
 
+volatile bool timer_expired = false;
 static int adc_raw = 0; //int created to store data from photosensor
 static int led_red_state = 1; //int created to store the state of the red-led (1 off / 0 on)
 
 static void configure_OUTPUT_pin(gpio_num_t pin, int state){
     ESP_LOGI("Pin", "setting pin%d to OUT", pin);
-    gpio_reset_pin(pin);
+    gpio_reset_pin(pin); //reset pin to default state
     /* Set the GPIO as a push/pull output */
-    gpio_set_direction(pin, GPIO_MODE_OUTPUT);
-    gpio_set_level(pin, state);
+    gpio_set_direction(pin, GPIO_MODE_OUTPUT);//set pin to output
+    gpio_set_level(pin, state);//set pin to state
 }
-
 
 static void init(void){
     //set LED pins to  output, this allows writing to the pin
-    configure_OUTPUT_pin(LED_BLUE,0);
+    configure_OUTPUT_pin(LED_BLUE,0);// Blue led on at start
     configure_OUTPUT_pin(LED_RED,1);
     configure_OUTPUT_pin(LED_GREEN,1);
 }
+
 bool IRAM_ATTR timer_isr_handler(struct gptimer_t *, const gptimer_alarm_event_data_t *, void * arg) {
+    //void * arg is a pointer to the timer where we dont know the type
+    //interrupt handler for timer expired event (timer_isr_handler)
     timer_expired = true;
     return true;
 }
@@ -79,7 +80,7 @@ static void timer_setup(gptimer_handle_t* timer){
     gptimer_event_callbacks_t call = {//choose callback of the timer (on interrupt)
         .on_alarm =  timer_isr_handler,
     };
-    
+    // Everything ESP does is to remove Warnings. We dont understand them, but we dont want them
     ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, timer));//check for error when making timer
     ESP_ERROR_CHECK(gptimer_set_alarm_action(*timer, &alarm_config));//check for error when setting alarm
     ESP_ERROR_CHECK(gptimer_register_event_callbacks(*timer, &call,NULL));//check for error when registering callback
