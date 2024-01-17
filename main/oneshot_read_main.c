@@ -153,29 +153,30 @@ void app_main(void){
         case 0b000:
             green_LED();
             vTaskDelay(100/portTICK_PERIOD_MS);
-            old = example_lvgl_demo_ui(disp,"All good",old);
+            old = example_lvgl_demo_ui(disp,"\nAll good",old);
             break;
         case 0b001:
-            old = example_lvgl_demo_ui(disp, "too dark", old);
+            old = example_lvgl_demo_ui(disp, "\ntoo dark", old);
             green_LED();
             break;
         case 0b010:
         case 0b011:
-            old = example_lvgl_demo_ui(disp, "too dark", old);
+            old = example_lvgl_demo_ui(disp, "\ntoo dark", old);
             red_LED();
             break;
         case 0b100:
-            old = example_lvgl_demo_ui(disp, "too dry", old);
+            old = example_lvgl_demo_ui(disp, "\ntoo dry", old);
             red_LED();
             break;
         case 0b101:
         case 0b110:
         case 0b111:
-            old = example_lvgl_demo_ui(disp, "too dark\ntoo dry", old);
+            old = example_lvgl_demo_ui(disp, "\ntoo dark\ntoo dry", old);
             red_LED();
             break;
         default:
             ESP_LOGI("ERROR", "Something went wrong");
+            old = example_lvgl_demo_ui(disp, "something went wrong", old);
         }
         led_red_state = !led_red_state;
         vTaskDelay(100 / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
