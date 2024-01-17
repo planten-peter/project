@@ -19,6 +19,7 @@
 #include "driver/gptimer.h"
 #include "i2c_oled_example_main.c"
 #include "lvgl_demo_ui.c"
+#include "i2c.c"
 
 /*---------------------------------------------------------------
         ADC General Macros
@@ -130,9 +131,12 @@ void app_main(void){
     gptimer_handle_t timer = NULL; // timer handle
     adc_oneshot_unit_handle_t adc1_handle = NULL; // adc handle
     init(); // setup LED pins
+
     timer_setup(&timer); // setup timer
     ADC_setup(&adc1_handle); // setup ADC
+       
     ESP_ERROR_CHECK_WITHOUT_ABORT(gptimer_start(timer)); // start timer
+     temp_sensor_example();
     lv_disp_t* disp = generateDisp(); // setup screen
     lv_obj_t* old = NULL; //the text displayed on the screen
     vTaskDelay(3000 / portTICK_PERIOD_MS); // delay for 3 seconds
