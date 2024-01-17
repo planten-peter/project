@@ -19,7 +19,7 @@
 #include "driver/gptimer.h"
 #include "i2c_oled_example_main.c"
 #include "lvgl_demo_ui.c"
-#include "i2c.c"
+#include "i2c.h"
 
 /*---------------------------------------------------------------
         ADC General Macros
@@ -114,6 +114,25 @@ static void ADC_setup(adc_oneshot_unit_handle_t* adc1_handle){
     ESP_ERROR_CHECK(adc_oneshot_config_channel(*adc1_handle, EXAMPLE_ADC1_CHAN1, &config));
 }
 
+static void temp_sensor(void) {
+  i2c_port_t port = setup_i2c(GPIO_NUM_18, GPIO_NUM_19);
+  esp_err_t err;
+  uint16_t temp_reading;
+  float real_temp;
+
+  while(true) {
+    err = am2320_read_temp(port, AM2320_I2C_ADDR, &temp_reading);
+    if (err == ESP_OK) {
+      real_temp = (float) temp_reading / 10.0;
+      printf("temp=%.2f\n", real_temp);
+    } else {
+      printf("ERR: Unable to read temperature sensor: %x (%s)\n", err, esp_err_to_name(err));
+    }
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
+  }
+}
+
+
 static void green_LED(){
     setPin(LED_RED,1);
     setPin(LED_GREEN,0);
@@ -131,12 +150,16 @@ void app_main(void){
     gptimer_handle_t timer = NULL; // timer handle
     adc_oneshot_unit_handle_t adc1_handle = NULL; // adc handle
     init(); // setup LED pins
+    
+    temp_sensor();
 
     timer_setup(&timer); // setup timer
     ADC_setup(&adc1_handle); // setup ADC
        
     ESP_ERROR_CHECK_WITHOUT_ABORT(gptimer_start(timer)); // start timer
-     temp_sensor_example();
+    
+    
+    
     lv_disp_t* disp = generateDisp(); // setup screen
     lv_obj_t* old = NULL; //the text displayed on the screen
     vTaskDelay(3000 / portTICK_PERIOD_MS); // delay for 3 seconds

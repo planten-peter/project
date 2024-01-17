@@ -1,12 +1,12 @@
 #include "i2c.h"
 
-/*
+
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
-*/
+
 
 
 #define I2C_FREQ_HZ (100000) // 100kHz
@@ -72,7 +72,7 @@ esp_err_t am2320_read_temp(i2c_port_t port, uint8_t am2320_addr, uint16_t* temp_
     vTaskDelay(1 / portTICK_PERIOD_MS);
   }
   if (err != ESP_OK) {
-    ESP_OK("I2C", "am2320 did not respond to wake command: %s", esp_err_to_name(err));
+    ESP_LOGI("I2C", "am2320 did not respond to wake command: %s", esp_err_to_name(err));
     return err;
   }
   //Delay a little to allow the device to come up
@@ -178,6 +178,7 @@ void soil_sensor_example(void) {
 /**
  * An example of how to use the temperature sensor
 */
+
 void temp_sensor_example(void) {
   i2c_port_t port = setup_i2c(GPIO_NUM_18, GPIO_NUM_19);
   esp_err_t err;
