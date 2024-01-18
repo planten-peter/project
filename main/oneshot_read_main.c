@@ -114,17 +114,18 @@ static void red_LED(){
 }
 
 void app_main(void){
-    init(); // setup LED pins
-    i2c_port_t port = I2C_setup(IC2_SDA, IC2_SCL);// setup I2C to the soil sensor and screen (via the relevand GPIO ports)
-    gptimer_handle_t timer = NULL; // timer handle
-    adc_oneshot_unit_handle_t adc1_handle = NULL; // adc handle
-    timer_setup(&timer); // setup timer
-    ADC_setup(&adc1_handle); // setup ADC
-    lv_disp_t* disp = generateDisp(); // setup screen
-    lv_obj_t* old = NULL; //the text displayed on the screen
-    vTaskDelay(3000 / portTICK_PERIOD_MS); // delay for 3 seconds
-    ESP_ERROR_CHECK_WITHOUT_ABORT(gptimer_start(timer)); // start timer
-    while (1) { // Nu sker der ting og sager
+    i2c_port_t port = setup_soil_sensor(IC2_SDA, IC2_SCL);
+    gptimer_handle_t timer = NULL;
+    adc_oneshot_unit_handle_t adc1_handle = NULL;
+    init();
+    ESP_LOGI("light","blue led on");
+    timer_setup(&timer);
+    ADC_setup(&adc1_handle);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(gptimer_start(timer));
+    lv_disp_t* disp = generateDisp();
+    lv_obj_t* old = NULL;
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    while (1) {
         //-------------ADC1 Read---------------//
         adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw);
         int soil = read_soil_sensor(port);
@@ -149,6 +150,7 @@ void app_main(void){
             old = example_lvgl_demo_ui(disp, "too dark", old);
             green_LED();
             break;
+        case 0b010:
         case 0b011:
             old = example_lvgl_demo_ui(disp, "too dark", old);
             red_LED();
@@ -158,6 +160,7 @@ void app_main(void){
             red_LED();
             break;
         case 0b101:
+        case 0b110:
         case 0b111:
             old = example_lvgl_demo_ui(disp, "too dark\ntoo dry", old);
             red_LED();
