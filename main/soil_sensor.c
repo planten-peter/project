@@ -13,16 +13,7 @@
 #define readCount 5
 
 // Function to set up the soil sensor
-/**
- * @brief sets up the I2C connection
- * outputs -1 if not able to set up
- * outputs i2c_port_t if succesful
- * 
- * @param sda_pin 
- * @param scl_pin 
- * @return i2c_port_t 
- */
-i2c_port_t I2C_setup(int sda_pin, int scl_pin) {
+i2c_port_t setup_soil_sensor(int sda_pin, int scl_pin) {
   esp_err_t err;
 
   int i2c_master_port = I2C_MASTER_PORT;
@@ -33,7 +24,7 @@ i2c_port_t I2C_setup(int sda_pin, int scl_pin) {
     .sda_pullup_en = GPIO_PULLUP_ENABLE,
     .scl_pullup_en = GPIO_PULLUP_ENABLE,
     .master.clk_speed = 100000,
-  }; 
+  };
 
   err = i2c_param_config(i2c_master_port, &i2c_conf);
   if (err != ESP_OK) {
@@ -61,18 +52,24 @@ i2c_port_t I2C_setup(int sda_pin, int scl_pin) {
  *  
  */
 unsigned short read_soil_sensor(i2c_port_t port) {
-  for (int i = 0; i < readCount; i++) //reads the sensor up to 5 times (if an error is detected (see line 71-72)) 
+  int sum = 0;
+  int succes = 0;
+  for (int i = 0; i < readCount; i++)
   {
     esp_err_t err;
-    uint8_t wbuf[2] = {SOIL_BASE_ADDR, SOIL_F_REG};// What to write to the sensor
-    uint8_t rbuf[RBUF_SIZE]; // where to read from the sensor 
-              //I2C,sensor address,what to write,size of write,where to write response,size of response,timeout,
+    uint8_t wbuf[2] = {SOIL_BASE_ADDR, SOIL_F_REG};
+    uint8_t rbuf[RBUF_SIZE];
+
     err = i2c_master_write_read_device(port, STEMMA_ADDR, wbuf, 2, rbuf, RBUF_SIZE, I2C_TIMEOUT_MS / portTICK_PERIOD_MS);
-    if (err != ESP_OK) {//If it fails to read the sensor it will try again 
+    if (err != ESP_OK) {
       continue;
     }
-    return ((uint16_t) rbuf[0]) << 8 | ((uint16_t) rbuf[1]); //bitwise operation taking the number from the soil sensor (which consist of 2 bytes (rbuf0 and rbuf1))
+    sum += ((uint16_t) rbuf[0]) << 8 | ((uint16_t) rbuf[1]);
+    succes++;
   }
-  printf("ERROR: failed to read soil sensor %d times\n",readCount);
-  return 0;
+  if(succes == 0) {
+    printf("ERROR: failed to read soil sensor %d times\n",readCount);
+    return sum;
+  }
+  return sum / succes;
 }
