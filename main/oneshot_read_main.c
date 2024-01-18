@@ -61,6 +61,7 @@ static void init(void){
     ESP_LOGI("light","blue led on");
 }
 
+
 bool IRAM_ATTR timer_isr_handler(struct gptimer_t *, const gptimer_alarm_event_data_t *, void * arg) {
     //void * arg is a pointer to the timer where we dont know the type
     //interrupt handler for timer expired event (timer_isr_handler)
@@ -110,8 +111,7 @@ static void ADC_setup(adc_oneshot_unit_handle_t* adc1_handle){
         .bitwidth = ADC_BITWIDTH_DEFAULT, //bit bredden (det maksimale tal vi kan skriv)
         .atten = EXAMPLE_ADC_ATTEN, //lav attennuation for præcision (tab af volt over en afstand)
     };
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(*adc1_handle, EXAMPLE_ADC1_CHAN1, &config));
-}
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, EXAMPLE_ADC1_CHAN1, &config));
 
 static void green_LED(){
     setPin(LED_RED,1);
