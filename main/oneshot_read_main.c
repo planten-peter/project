@@ -22,8 +22,6 @@
 
 // const static char *TAG = "EXAMPLE";
 
-volatile bool timer_expired = false;
-
 /*---------------------------------------------------------------
         ADC General Macros
 ---------------------------------------------------------------*/
@@ -41,8 +39,8 @@ volatile bool timer_expired = false;
 #define minimumLight 3500
 #define timerInSeconds 5
 
+static uint8_t s_led_state = 0b1;
 static int adc_raw = 0; //int created to store data from photosensor
-static int led_red_state = 1; //int created to store the state of the red-led (1 off / 0 on)
 
 static void configure_OUTPUT_pin(gpio_num_t pin, int state){
     ESP_LOGI("Pin", "setting pin%d to OUT", pin);
@@ -52,13 +50,13 @@ static void configure_OUTPUT_pin(gpio_num_t pin, int state){
     gpio_set_level(pin, state);
 }
 
-
 static void init(void){
     //set LED pins to  output, this allows writing to the pin
     configure_OUTPUT_pin(LED_BLUE,0);
     configure_OUTPUT_pin(LED_RED,1);
     configure_OUTPUT_pin(LED_GREEN,1);
 }
+
 bool IRAM_ATTR timer_isr_handler(struct gptimer_t *, const gptimer_alarm_event_data_t *, void * arg) {
     timer_expired = true;
     return true;
@@ -87,20 +85,22 @@ static void timer_setup(gptimer_handle_t* timer){
     ESP_LOGI("","Timer created\n");
 }
 
-static void ADC_setup(adc_oneshot_unit_handle_t* adc1_handle){
+void app_main(void)
+{
+    init();
     //-------------ADC1 Init---------------// Analog Digital Converter
+    adc_oneshot_unit_handle_t adc1_handle;
     adc_oneshot_unit_init_cfg_t init_config1 = {
         .unit_id = ADC_UNIT_1,//PIN 0 on the on ESP32
     };
-    ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config1, adc1_handle));
-    
+    ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config1, &adc1_handle));
+
     //-------------ADC1 Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
         .atten = EXAMPLE_ADC_ATTEN,
     };
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(*adc1_handle, EXAMPLE_ADC1_CHAN1, &config));
-}
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, EXAMPLE_ADC1_CHAN1, &config));
 
 static void green_LED(){
     setPin(LED_RED,1);
@@ -166,8 +166,7 @@ void app_main(void){
             ESP_LOGI("ERROR", "Something went wrong");
         }
         led_red_state = !led_red_state;
-        vTaskDelay(100 / portTICK_PERIOD_MS); //delaying the while loop. If timer_expired = true, 
-                                                                     //we are in red alert, and the while loop will run faster. If timer_expired false, 
-                                                                     //less frequently
+        vTaskDelay(100 / portTICK_PERIOD_MS); //delaying the while loop.
+
     }
 }
